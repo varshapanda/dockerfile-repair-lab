@@ -1,16 +1,22 @@
-FROM node:notfound
+# Use a lightweight, supported Node.js base image
+FROM node:20-alpine
 
-# Copy files first, then change directory
-COPY . .
-WORKDIR /wrong
+# Set the application working directory
+WORKDIR /app
 
-# Broken dependency installation
-RUN npm install package-lock.json
+# Copy dependency manifests first to maximize Docker layer caching
+COPY package.json package-lock.json ./
 
-# Copying a folder that doesn't exist in the project
-COPY missing-folder ./missing-folder
+# Install exact dependencies from package-lock.json
+RUN npm ci
 
+# Copy application source after dependencies
+COPY app.js ./
+COPY public ./public
+COPY src ./src
+
+# Document the application port
 EXPOSE 8080
 
-# Incorrect startup command
-CMD ["npm", "run", "production"]
+# Start the Express application
+CMD ["npm", "start"]
